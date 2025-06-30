@@ -22,3 +22,14 @@ jobs:
       uses: actions/upload-artifact@main
       with:
         path: ./*.xz*
+    - name: Create release
+      uses: softprops/action-gh-release@master
+      with:
+        tag_name: 0.2
+        name: FreeBSD sysroots
+        files: ./*.xz*
+        draft: false
+        prerelease: false
+        fail_on_unmatched_files: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

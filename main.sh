@@ -23,18 +23,13 @@ declare -r targets=(
 for target in "${targets[@]}"; do
 	declare version='12.3-RELEASE'
 	
-	if [ "${target}" == 'riscv/riscv64' ]; then
-		version='14.2-STABLE'
-	elif [ "${target}" == 'powerpc/powerpc64_elfv2' ]; then
+	if [ "${target}" = 'riscv/riscv64' ]; then
+		version='14.2-RELEASE'
+	elif [ "${target}" = 'powerpc/powerpc64_elfv2' ]; then
 		version='13.0-RELEASE'
 	fi
 	
-	if [ "${target}" == 'riscv/riscv64' ]; then
-		declare url="http://ftp.freebsd.org/pub/FreeBSD/snapshots/$(cut -d '_' -f '1' <<< "${target}")/${version}/base.txz"
-	else
-		declare url="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/$(cut -d '_' -f '1' <<< "${target}")/${version}/base.txz"
-	fi
-	
+	declare url="http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/$(cut -d '_' -f '1' <<< "${target}")/${version}/base.txz"
 	declare output="/tmp/freebsd-${target//\//_}-base.tar.xz"
 	
 	case "${target}" in
@@ -85,17 +80,34 @@ for target in "${targets[@]}"; do
 	tar --directory="${sysroot_directory}" --strip=2 --extract --file="${output}" './usr/lib' './usr/include' 2>/dev/null
 	tar --directory="${sysroot_directory}" --extract --file="${output}"  './lib' 2>/dev/null
 	
+	
+	rm \
+		--force \
+		--recursive \
+		"${sysroot_directory}/lib/clang" \
+		"${sysroot_directory}/lib/libxo" \
+		"${sysroot_directory}/lib/test.enc" \
+		"${sysroot_directory}/lib/nvmecontrol" \
+		"${sysroot_directory}/lib/geom" \
+		"${sysroot_directory}/lib/aout" \
+		"${sysroot_directory}/lib/compat" \
+		"${sysroot_directory}/lib/dtrace" \
+		"${sysroot_directory}/lib/engines" \
+		"${sysroot_directory}/lib/flua" \
+		"${sysroot_directory}/lib/i18n" \
+		"${sysroot_directory}/lib/include" \
+		"${sysroot_directory}/lib/libc++"* \
+		"${sysroot_directory}/include/c++"
+	
 	cd "${sysroot_directory}/lib"
 	
-	if [ -f './libc++.so' ]; then
-		chmod 777 './libc++.so'
-		echo 'GROUP ( ./libc++.so.1 ./libcxxrt.so )' > './libc++.so'
-		chmod 444 './libc++.so'
+	if [ -d './casper' ]; then
+		ln --symbolic --force './casper/libcap'* './'
 	fi
 	
 	chmod 777 './libc.so'
 	
-	if [ "${target}" == 'riscv/riscv64' ] || [ "${target}" == 'powerpc/powerpc64_elfv2' ]; then
+	if [ "${target}" = 'riscv/riscv64' ] || [ "${target}" = 'powerpc/powerpc64_elfv2' ]; then
 		echo 'GROUP ( ./libc.so.7 ./libc_nonshared.a )' > './libc.so'
 	else
 		echo 'GROUP ( ./libc.so.7 ./libc_nonshared.a ./libssp_nonshared.a )' > './libc.so'
